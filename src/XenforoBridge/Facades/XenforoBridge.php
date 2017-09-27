@@ -13,6 +13,6 @@ class XenforoBridge extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return 'xenforobridge';
+        return \Urb\XenforoBridge\XenforoBridge::class;
     }
 }
