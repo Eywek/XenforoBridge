@@ -467,6 +467,23 @@ class XenforoBridge
         \XenForo_Model_Ip::log($user['user_id'], 'user', $user['user_id'], 'register');
     }
 
+
+    /**
+     * Edit an user
+     */
+    public function register($username, $field, $value)
+    {
+        $userModel = \XenForo_Model::create('XenForo_Model_User');
+        $user = $userModel->getUserByName($username);
+        if ($field !== 'password')
+            return ($userModel->update($user, $field, $value));
+        // For passwords
+        $auth = \XenForo_Authentication_Abstract::createDefault();
+        $authData = $auth->generate($value);
+        $userModel->update($user, 'scheme_class', $auth->getClassName());
+        return ($userModel->update($user, 'data', $authData));
+    }
+
     /**
      * Changes the users session to the corresponding user id
      * use this method with caution
