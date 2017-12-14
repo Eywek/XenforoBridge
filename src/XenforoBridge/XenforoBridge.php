@@ -471,7 +471,7 @@ class XenforoBridge
     /**
      * Edit an user
      */
-    public function register($username, $field, $value)
+    public function editUser($username, $field, $value)
     {
         $userModel = \XenForo_Model::create('XenForo_Model_User');
         $user = $userModel->getUserByName($username);
