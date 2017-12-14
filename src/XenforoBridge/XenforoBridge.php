@@ -424,7 +424,7 @@ class XenforoBridge
     /**
      * Login and set user session to user id (No Validation is used on this method
      */
-    public function loginAsUser($username, $password, $remember)
+    public function login($username, $password, $remember)
     {
         $userModel = \XenForo_Model::create('XenForo_Model_User');
         $userId = $userModel->validateAuthentication($username, $password);
