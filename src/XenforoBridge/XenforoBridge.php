@@ -467,7 +467,6 @@ class XenforoBridge
         \XenForo_Model_Ip::log($user['user_id'], 'user', $user['user_id'], 'register');
     }
 
-
     /**
      * Edit an user
      */
@@ -482,6 +481,22 @@ class XenforoBridge
         $authData = $auth->generate($value);
         $userModel->update($user, 'scheme_class', $auth->getClassName());
         return ($userModel->update($user, 'data', $authData));
+    }
+
+    /**
+     * Log out an user
+     */
+    public function logout($username)
+    {
+        $sessionModel = \XenForo_Model::create('XenForo_Model_Session');
+        $sessionModel->processLastActivityUpdateForLogOut(\XenForo_Visitor::getUserId());
+
+        \XenForo_Application::get('session')->delete();
+        \XenForo_Helper_Cookie::deleteAllCookies(
+            ['session', 'tfa_trust'],
+            ['user' => ['httpOnly' => false]]
+        );
+        \XenForo_Visitor::setup(0);
     }
 
     /**
