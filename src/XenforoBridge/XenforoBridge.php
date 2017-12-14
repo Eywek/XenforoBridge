@@ -422,32 +422,46 @@ class XenforoBridge
 
 
     /**
-     * Login and set user session to user id (No Validation is used on this method)
-     *
-     * @param (int) $user
-     * @param bool|false $remember
-     * @param bool|true $log
-     * @return mixed
+     * Login and set user session to user id (No Validation is used on this method
      */
-    public function loginAsUser($user, $remember = false,$log = true)
+    public function loginAsUser($username, $password, $remember)
     {
-        // Set Remember Cookie
-        if($remember)
-        {
-            /* @var \XenForo_Model_User */
-            $this->getXenforoModel('XenForo_Model_User')->setUserRememberCookie($user);
+        $userModel = \XenForo_Model::create('XenForo_Model_User');
+        $userId = $userModel->validateAuthentication($username, $password);
+        if ($userId !== FALSE) {
+            $userModel->setUserRememberCookie($userId);
+            \XenForo_Model_Ip::log($userId, 'user', $userId, 'login');
+            $userModel->deleteSessionActivity(0, $_SERVER['HTTP_CF_CONNECTING_IP']);
+            $visitor = \XenForo_Visitor::setup($userId);
+            \XenForo_Application::getSession()->userLogin($userId, $visitor['password_date']);
         }
+    }
 
-        //Log IP
-        if($log)
-        {
-            /* @var XenForo_Model_Ip */
-            $this->getXenforoModel('XenForo_Model_Ip')->logIp($user,'user',$user,'login');
-        }
+    /**
+     * Register an user
+     */
+    public function register($username, $password, $email)
+    {
+        $auth = \XenForo_Authentication_Abstract::createDefault();
+        $authData = $auth->generate($password);
+        $userPassword = array('scheme_class' => $auth->getClassName(), 'data' => $authData);
 
-        $this->changeUserSession($user);
-
-        return $user;
+        $writer = \XenForo_DataWriter::create('XenForo_DataWriter_User');
+        $info = [
+            'username' => $username,
+            'email' => $email,
+            'user_group_id' => 2,
+            'language_id' => 1,
+        ];
+        $writer->advanceRegistrationUserState();
+        $writer->bulkSet($info);
+        // Set user password
+        $writer->set('scheme_class', $userPassword['scheme_class']);
+        $writer->set('data', $userPassword['data'], 'xf_user_authenticate');
+        // Save user
+        $writer->save();
+        $user = $writer->getMergedData();
+        \XenForo_Model_Ip::log($user['user_id'], 'user', $user['user_id'], 'register');
     }
 
     /**
